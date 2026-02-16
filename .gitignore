@@ -1,0 +1,28 @@
+# Virtual environments
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+logs/*.log
+
+# Data
+data/*.csv
+data/*.json
+data/*.db
+
+# Google credentials
+config/google_credentials.json
