@@ -30,6 +30,7 @@ async def init_db() -> None:
             campaign_id TEXT NOT NULL,
             contact_name TEXT NOT NULL,
             contact_phone TEXT NOT NULL,
+            contact_context TEXT DEFAULT '',
             twilio_call_sid TEXT DEFAULT '',
             status TEXT NOT NULL DEFAULT 'queued',
             outcome TEXT NOT NULL DEFAULT 'unknown',

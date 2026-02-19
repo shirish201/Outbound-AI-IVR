@@ -83,6 +83,7 @@ async def _process_contact(
             campaign_id=campaign_id,
             contact_name=contact.name,
             contact_phone=contact.phone,
+            contact_context=contact.context_summary,
         )
 
         try:

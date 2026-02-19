@@ -73,7 +73,9 @@ async def set_campaign_total(campaign_id: str, total: int) -> None:
 
 # ── Call Records ───────────────────────────────────────────
 
-async def create_call_record(campaign_id: str, contact_name: str, contact_phone: str) -> CallRecord:
+async def create_call_record(
+    campaign_id: str, contact_name: str, contact_phone: str, contact_context: str = ""
+) -> CallRecord:
     db = await get_db()
     now = datetime.utcnow().isoformat()
     record = CallRecord(
@@ -81,18 +83,19 @@ async def create_call_record(campaign_id: str, contact_name: str, contact_phone:
         campaign_id=campaign_id,
         contact_name=contact_name,
         contact_phone=contact_phone,
+        contact_context=contact_context,
         created_at=now,
         updated_at=now,
     )
     await db.execute(
         """INSERT INTO call_records
-           (id, campaign_id, contact_name, contact_phone, twilio_call_sid,
+           (id, campaign_id, contact_name, contact_phone, contact_context, twilio_call_sid,
             status, outcome, summary, transcript, duration_seconds, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (record.id, record.campaign_id, record.contact_name, record.contact_phone,
-         record.twilio_call_sid, record.status.value, record.outcome.value,
-         record.summary, record.transcript, record.duration_seconds,
-         record.created_at, record.updated_at),
+         record.contact_context, record.twilio_call_sid, record.status.value,
+         record.outcome.value, record.summary, record.transcript,
+         record.duration_seconds, record.created_at, record.updated_at),
     )
     await db.commit()
     return record
@@ -180,6 +183,7 @@ def _row_to_call_record(row) -> CallRecord:
         campaign_id=row["campaign_id"],
         contact_name=row["contact_name"],
         contact_phone=row["contact_phone"],
+        contact_context=row["contact_context"] or "",
         twilio_call_sid=row["twilio_call_sid"],
         status=CallStatus(row["status"]),
         outcome=CallOutcome(row["outcome"]),

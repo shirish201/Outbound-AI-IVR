@@ -30,7 +30,10 @@ def _get_client() -> gspread.Client:
 def read_contacts(sheet_url: str) -> list[Contact]:
     """Read contacts from a Google Sheet.
 
-    Expected columns: Name, Phone, Email, Company, Notes
+    Expected columns: customer_id, first_name, phone_number, age, income,
+    nationality, tenure_months, transactions_last_month, spends_last_month,
+    previous_products, is_cross_sale_target, prediction_score, shap_features,
+    shap_values, triggerCols.
     First row is headers.
     """
     client = _get_client()
@@ -39,16 +42,25 @@ def read_contacts(sheet_url: str) -> list[Contact]:
 
     contacts = []
     for i, row in enumerate(records, start=2):  # Row 2 is first data row
-        name = str(row.get("Name", "")).strip()
-        phone = str(row.get("Phone", "")).strip()
+        phone = str(row.get("phone_number", "")).strip()
         if not phone:
             continue
         contacts.append(Contact(
-            name=name,
+            name=str(row.get("first_name", "")).strip(),
             phone=phone,
-            email=str(row.get("Email", "")).strip(),
-            company=str(row.get("Company", "")).strip(),
-            notes=str(row.get("Notes", "")).strip(),
+            customer_id=str(row.get("customer_id", "")).strip(),
+            age=str(row.get("age", "")).strip(),
+            income=str(row.get("income", "")).strip(),
+            nationality=str(row.get("nationality", "")).strip(),
+            tenure_months=str(row.get("tenure_months", "")).strip(),
+            transactions_last_month=str(row.get("transactions_last_month", "")).strip(),
+            spends_last_month=str(row.get("spends_last_month", "")).strip(),
+            previous_products=str(row.get("previous_products", "")).strip(),
+            is_cross_sale_target=str(row.get("is_cross_sale_target", "")).strip(),
+            prediction_score=str(row.get("prediction_score", "")).strip(),
+            shap_features=str(row.get("shap_features", "")).strip(),
+            shap_values=str(row.get("shap_values", "")).strip(),
+            trigger_cols=str(row.get("triggerCols", "")).strip(),
             row_number=i,
         ))
     logger.info("Read %d contacts from sheet", len(contacts))
@@ -58,18 +70,27 @@ def read_contacts(sheet_url: str) -> list[Contact]:
 def write_result(sheet_url: str, row_number: int, outcome: str, summary: str) -> None:
     """Write call result back to the Google Sheet.
 
-    Writes to columns F (Outcome) and G (Summary).
+    Appends Outcome and Summary columns after the existing headers.
     """
     client = _get_client()
     sheet = client.open_by_url(sheet_url).sheet1
 
-    # Update header if needed
     headers = sheet.row_values(1)
-    if len(headers) < 6 or headers[5] != "Outcome":
-        sheet.update_cell(1, 6, "Outcome")
-    if len(headers) < 7 or headers[6] != "Summary":
-        sheet.update_cell(1, 7, "Summary")
 
-    sheet.update_cell(row_number, 6, outcome)
-    sheet.update_cell(row_number, 7, summary)
+    # Find or create Outcome column
+    if "Outcome" in headers:
+        outcome_col = headers.index("Outcome") + 1
+    else:
+        outcome_col = len(headers) + 1
+        sheet.update_cell(1, outcome_col, "Outcome")
+
+    # Find or create Summary column
+    if "Summary" in headers:
+        summary_col = headers.index("Summary") + 1
+    else:
+        summary_col = outcome_col + 1
+        sheet.update_cell(1, summary_col, "Summary")
+
+    sheet.update_cell(row_number, outcome_col, outcome)
+    sheet.update_cell(row_number, summary_col, summary)
     logger.info("Wrote result to sheet row %d: %s", row_number, outcome)

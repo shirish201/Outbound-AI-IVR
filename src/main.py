@@ -1,4 +1,5 @@
 import logging
+import logging.handlers
 import os
 from contextlib import asynccontextmanager
 
@@ -6,11 +7,22 @@ from fastapi import FastAPI
 
 from src.db.database import init_db, close_db
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
-logger = logging.getLogger(__name__)
-
-# Ensure data/ directory exists for SQLite
+# Ensure directories exist
 os.makedirs("data", exist_ok=True)
+os.makedirs("logs", exist_ok=True)
+
+# Configure logging to both console and file
+log_format = "%(asctime)s %(name)s %(levelname)s %(message)s"
+logging.basicConfig(level=logging.INFO, format=log_format)
+
+file_handler = logging.handlers.RotatingFileHandler(
+    "logs/ivr.log", maxBytes=10_000_000, backupCount=5, encoding="utf-8"
+)
+file_handler.setFormatter(logging.Formatter(log_format))
+file_handler.setLevel(logging.DEBUG)
+logging.getLogger().addHandler(file_handler)
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager

@@ -44,8 +44,7 @@ class ConversationManager:
 
     async def start(self) -> None:
         """Initialize the conversation — load campaign data, start STT."""
-        # Load the call record to get campaign info
-        record = None
+        # Load the call record to get campaign info and contact context
         try:
             from src.db.database import get_db
             db = await get_db()
@@ -53,6 +52,8 @@ class ConversationManager:
                 "SELECT * FROM call_records WHERE id = ?", (self.call_record_id,)
             )
             if rows:
+                contact_name = rows[0]["contact_name"] or ""
+                contact_context = rows[0]["contact_context"] or ""
                 campaign_id = rows[0]["campaign_id"]
                 camp_rows = await db.execute_fetchall(
                     "SELECT * FROM campaigns WHERE id = ?", (campaign_id,)
@@ -60,6 +61,13 @@ class ConversationManager:
                 if camp_rows:
                     self.system_prompt = camp_rows[0]["system_prompt"]
                     self.greeting = camp_rows[0]["greeting"]
+
+                # Inject contact context into the system prompt
+                if contact_name or contact_context:
+                    context_block = f"\n\n--- Customer Info ---\nName: {contact_name}"
+                    if contact_context:
+                        context_block += f"\n{contact_context}"
+                    self.system_prompt += context_block
         except Exception:
             logger.exception("Error loading campaign data")
 
